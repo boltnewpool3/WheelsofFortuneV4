@@ -1,5 +1,7 @@
 import { Contestant, ContestData, DrawResult } from '../types';
 
+const DRAW_RESULTS_STORAGE_KEY = 'wheels_draw_results';
+
 export async function loadContestData(): Promise<ContestData> {
   const response = await fetch('/contest-data.json');
   if (!response.ok) {
@@ -49,41 +51,28 @@ export function findContestantByTicket(
   return undefined;
 }
 
-export async function initializeDraws(supabase: any): Promise<void> {
-  const contestData = await loadContestData();
-
-  for (const drawDef of contestData.draws) {
-    const { data } = await supabase
-      .from('draws')
-      .select('id')
-      .eq('draw_number', drawDef.drawNumber)
-      .maybeSingle();
-
-    if (!data) {
-      await supabase.from('draws').insert({
-        draw_number: drawDef.drawNumber,
-        prize: drawDef.prize,
-        status: 'pending',
-      });
-    }
+export function getLocalDrawResults(): DrawResult[] {
+  const stored = localStorage.getItem(DRAW_RESULTS_STORAGE_KEY);
+  if (!stored) {
+    return [];
+  }
+  try {
+    return JSON.parse(stored) as DrawResult[];
+  } catch {
+    return [];
   }
 }
 
-export async function executeDrawAndGetResults(
-  supabase: any,
+export function saveDrawResults(results: DrawResult[]): void {
+  localStorage.setItem(DRAW_RESULTS_STORAGE_KEY, JSON.stringify(results));
+}
+
+export function executeLocalDraw(
   drawNumber: number,
-  contestants: Contestant[]
-): Promise<{ ticketNumber: string; contestant: Contestant }> {
-  const { data: allDraws } = await supabase
-    .from('draws')
-    .select('*')
-    .order('draw_number', { ascending: true });
-
-  const completedDraws = (allDraws as DrawResult[]).filter(
-    d => d.status === 'completed'
-  );
-
-  const availableTickets = getAvailableTickets(contestants, completedDraws);
+  contestants: Contestant[],
+  completedDrawResults: DrawResult[]
+): { ticketNumber: string; contestant: Contestant } {
+  const availableTickets = getAvailableTickets(contestants, completedDrawResults);
   const selectedTicket = selectRandomTicket(availableTickets);
   const winnerContestant = findContestantByTicket(contestants, selectedTicket);
 
@@ -91,29 +80,8 @@ export async function executeDrawAndGetResults(
     throw new Error('Selected ticket does not belong to any contestant');
   }
 
-  const drawDefinition = (allDraws as DrawResult[]).find(
-    d => d.draw_number === drawNumber
-  );
-
-  await supabase.from('draws').update({
-    status: 'completed',
-    winning_ticket: selectedTicket,
-    winner_id: winnerContestant.id,
-    winner_name: winnerContestant.name,
-    drawn_at: new Date().toISOString(),
-  }).eq('draw_number', drawNumber);
-
   return {
     ticketNumber: selectedTicket,
     contestant: winnerContestant,
   };
-}
-
-export async function getDrawResults(supabase: any): Promise<DrawResult[]> {
-  const { data } = await supabase
-    .from('draws')
-    .select('*')
-    .order('draw_number', { ascending: true });
-
-  return (data as DrawResult[]) || [];
 }

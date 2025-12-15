@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Plus, Trash2, Search, UserCheck } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { Contestant, Winner } from '../types';
+import { Contestant, Winner, ContestData } from '../types';
 
 export function Contestants() {
   const [contestants, setContestants] = useLocalStorage<Contestant[]>('contestants', []);
@@ -14,6 +14,21 @@ export function Contestants() {
     email: '',
     phone: '',
   });
+
+  useEffect(() => {
+    loadContestData();
+  }, []);
+
+  const loadContestData = async () => {
+    if (contestants.length > 0) return;
+    try {
+      const response = await fetch('/contest-data.json');
+      const data: ContestData = await response.json();
+      setContestants(data.contestants);
+    } catch (error) {
+      console.error('Failed to load contest data:', error);
+    }
+  };
 
   const handleAddContestant = (e: React.FormEvent) => {
     e.preventDefault();

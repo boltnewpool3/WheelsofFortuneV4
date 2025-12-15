@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Trophy, AlertCircle, RefreshCw, Bike } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { Contestant, ContestData, DrawResult, Winner } from '../types';
-import { loadContestData, initializeDraws, executeDrawAndGetResults, getDrawResults } from '../services/drawEngine';
-import { useSupabase } from '../hooks/useSupabase';
+import { loadContestData, executeLocalDraw, getLocalDrawResults, saveDrawResults } from '../services/drawEngine';
 
 export function DrawArena() {
-  const supabase = useSupabase();
-  const { user } = useAuth();
   const [contestData, setContestData] = useState<ContestData | null>(null);
   const [drawResults, setDrawResults] = useState<DrawResult[]>([]);
   const [winners, setWinners] = useState<Winner[]>([]);
@@ -32,32 +28,29 @@ export function DrawArena() {
       const data = await loadContestData();
       setContestData(data);
 
-      if (supabase) {
-        await initializeDraws(supabase);
-        const results = await getDrawResults(supabase);
-        setDrawResults(results);
+      const results = getLocalDrawResults();
+      setDrawResults(results);
 
-        const completedWinners: Winner[] = results
-          .filter(draw => draw.status === 'completed' && draw.winner_id)
-          .map(draw => ({
-            id: draw.winner_id!,
-            name: draw.winner_name || '',
-            department: data.contestants.find(c => c.id === draw.winner_id)?.department || '',
-            supervisor: data.contestants.find(c => c.id === draw.winner_id)?.supervisor || '',
-            prize: draw.prize,
-            winningTicket: draw.winning_ticket || 0,
-            wonAt: draw.drawn_at || '',
-          }));
+      const completedWinners: Winner[] = results
+        .filter(draw => draw.status === 'completed' && draw.winner_id)
+        .map(draw => ({
+          id: draw.winner_id!,
+          name: draw.winner_name || '',
+          department: data.contestants.find(c => c.id === draw.winner_id)?.department || '',
+          supervisor: data.contestants.find(c => c.id === draw.winner_id)?.supervisor || '',
+          prize: draw.prize,
+          winningTicket: draw.winning_ticket || '',
+          wonAt: draw.drawn_at || '',
+        }));
 
-        setWinners(completedWinners);
-      }
+      setWinners(completedWinners);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     }
   };
 
   const completedDraws = drawResults.filter(d => d.status === 'completed').length;
-  const canDraw = completedDraws < 3 && !isSpinning && supabase && user;
+  const canDraw = completedDraws < 3 && !isSpinning;
 
   const handleDraw = async () => {
     if (!canDraw || !contestData) return;
@@ -73,10 +66,10 @@ export function DrawArena() {
 
       await new Promise(resolve => setTimeout(resolve, 3000));
 
-      const { ticketNumber, contestant } = await executeDrawAndGetResults(
-        supabase,
+      const { ticketNumber, contestant } = executeLocalDraw(
         drawNumber,
-        contestData.contestants
+        contestData.contestants,
+        drawResults
       );
 
       const drawDef = contestData.draws.find(d => d.drawNumber === drawNumber);
@@ -90,11 +83,24 @@ export function DrawArena() {
         wonAt: new Date().toISOString(),
       };
 
+      const newDrawResult: DrawResult = {
+        id: `draw-${drawNumber}`,
+        draw_number: drawNumber,
+        prize: drawDef?.prize || '',
+        winning_ticket: ticketNumber,
+        winner_id: contestant.id,
+        winner_name: contestant.name,
+        status: 'completed',
+        drawn_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      const updatedResults = [...drawResults, newDrawResult];
+      saveDrawResults(updatedResults);
+      setDrawResults(updatedResults);
+
       setWinners([...winners, newWinner]);
       setSelectedWinner(newWinner);
-
-      const updatedResults = await getDrawResults(supabase);
-      setDrawResults(updatedResults);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Draw failed');
     } finally {
@@ -244,7 +250,7 @@ export function DrawArena() {
                   <p className="text-yellow-400 text-sm">
                     {completedDraws >= 3
                       ? 'All prizes have been awarded!'
-                      : 'Sign in to execute draws'}
+                      : 'Draw in progress...'}
                   </p>
                 </div>
               )}
