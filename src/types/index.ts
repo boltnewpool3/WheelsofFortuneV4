@@ -3,7 +3,7 @@ export interface Contestant {
   name: string;
   department: string;
   supervisor: string;
-  tickets: number[];
+  tickets: string[];
 }
 
 export interface ContestData {
@@ -21,7 +21,7 @@ export interface DrawResult {
   id: string;
   draw_number: number;
   prize: string;
-  winning_ticket: number | null;
+  winning_ticket: string | null;
   winner_id: number | null;
   winner_name: string | null;
   status: 'pending' | 'completed';
@@ -35,6 +35,6 @@ export interface Winner {
   department: string;
   supervisor: string;
   prize: string;
-  winningTicket: number;
+  winningTicket: string;
   wonAt: string;
 }

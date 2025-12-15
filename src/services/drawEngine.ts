@@ -11,14 +11,14 @@ export async function loadContestData(): Promise<ContestData> {
 export function getAvailableTickets(
   contestants: Contestant[],
   completedDrawResults: DrawResult[]
-): number[] {
+): string[] {
   const winnerIds = new Set(
     completedDrawResults
       .filter(draw => draw.status === 'completed' && draw.winner_id !== null)
       .map(draw => draw.winner_id)
   );
 
-  const availableTickets: number[] = [];
+  const availableTickets: string[] = [];
 
   for (const contestant of contestants) {
     if (!winnerIds.has(contestant.id)) {
@@ -29,7 +29,7 @@ export function getAvailableTickets(
   return availableTickets;
 }
 
-export function selectRandomTicket(availableTickets: number[]): number {
+export function selectRandomTicket(availableTickets: string[]): string {
   if (availableTickets.length === 0) {
     throw new Error('No tickets available for draw');
   }
@@ -39,7 +39,7 @@ export function selectRandomTicket(availableTickets: number[]): number {
 
 export function findContestantByTicket(
   contestants: Contestant[],
-  ticket: number
+  ticket: string
 ): Contestant | undefined {
   for (const contestant of contestants) {
     if (contestant.tickets.includes(ticket)) {
@@ -73,7 +73,7 @@ export async function executeDrawAndGetResults(
   supabase: any,
   drawNumber: number,
   contestants: Contestant[]
-): Promise<{ ticketNumber: number; contestant: Contestant }> {
+): Promise<{ ticketNumber: string; contestant: Contestant }> {
   const { data: allDraws } = await supabase
     .from('draws')
     .select('*')
