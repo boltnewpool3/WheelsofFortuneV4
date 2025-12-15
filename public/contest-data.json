@@ -1,0 +1,75 @@
+{
+  "contestName": "Wheels of Fortune 2.0",
+  "contestants": [
+    {
+      "id": 1,
+      "name": "Rajesh Kumar",
+      "department": "Sales",
+      "supervisor": "Amit Patel",
+      "tickets": [1001, 1002, 1003]
+    },
+    {
+      "id": 2,
+      "name": "Priya Singh",
+      "department": "Marketing",
+      "supervisor": "Neha Sharma",
+      "tickets": [2001, 2002]
+    },
+    {
+      "id": 3,
+      "name": "Arjun Mehta",
+      "department": "Engineering",
+      "supervisor": "Vikram Gupta",
+      "tickets": [3001, 3002, 3003, 3004]
+    },
+    {
+      "id": 4,
+      "name": "Sneha Desai",
+      "department": "HR",
+      "supervisor": "Ramesh Iyer",
+      "tickets": [4001, 4002]
+    },
+    {
+      "id": 5,
+      "name": "Aditya Verma",
+      "department": "Operations",
+      "supervisor": "Suresh Menon",
+      "tickets": [5001, 5002, 5003]
+    },
+    {
+      "id": 6,
+      "name": "Divya Nair",
+      "department": "Finance",
+      "supervisor": "Kavya Reddy",
+      "tickets": [6001]
+    },
+    {
+      "id": 7,
+      "name": "Karan Chopra",
+      "department": "Sales",
+      "supervisor": "Amit Patel",
+      "tickets": [7001, 7002, 7003]
+    },
+    {
+      "id": 8,
+      "name": "Ananya Kapoor",
+      "department": "Marketing",
+      "supervisor": "Neha Sharma",
+      "tickets": [8001, 8002, 8003]
+    }
+  ],
+  "draws": [
+    {
+      "drawNumber": 1,
+      "prize": "Pulsar NS 125"
+    },
+    {
+      "drawNumber": 2,
+      "prize": "Pulsar NS 125"
+    },
+    {
+      "drawNumber": 3,
+      "prize": "TVS Jupiter"
+    }
+  ]
+}
